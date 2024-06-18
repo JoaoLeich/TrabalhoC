@@ -1,15 +1,38 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewComponents;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.EntityFrameworkCore.Update.Internal;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
+builder.Services.AddScoped<ProductService, ProductService>();
+builder.Services.AddScoped<FornecedorService, FornecedorService>();
+builder.Services.AddScoped<ClienteService, ClienteService>();
 var con = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<LojaDBContext>(op => op.UseMySql(con, new MySqlServerVersion(new Version(8, 3, 0))));
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+
+        //Opcoes de validacao do token
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("testetestetestetestetestetestetestetestetestetestetestetestetesteteste"))
+        };
+    });
+
 
 var app = builder.Build();
 
@@ -19,90 +42,79 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
 app.UseHttpsRedirection();
 
 #region Produto
-app.MapPost("/AddProduto", async (LojaDBContext DbContext, Produto produto) =>
+app.MapGet("/produtos", async (ProductService productService) =>
 {
-
-    DbContext.Produtos.Add(produto);
-    await DbContext.SaveChangesAsync();
-    return Results.Created($"createdproduto/{produto.id}", produto);
-
+    var produtos = await productService.GetAllProductsAsync();
+    return Results.Ok(produtos);
 });
 
-app.MapGet("/Produtos", async (LojaDBContext DbContext) =>
+app.MapGet("/produtos/{id}", async (int id, ProductService productService) =>
 {
-
-    var Produtos = await DbContext.Produtos.ToListAsync();
-
-    return Results.Ok(Produtos);
-
-});
-
-app.MapGet("/produtos/{id}", async (int id, LojaDBContext DbContext) =>
-{
-
-    var Produto = await DbContext.Produtos.FindAsync(id);
-
-    if (Produto == null)
+    var produto = await productService.GetProductByIdAsync(id);
+    if (produto == null)
     {
-
-        return Results.NotFound($"Produto with id: {id} not found");
-
+        return Results.NotFound($"Product with ID {id} not found.");
     }
-
-    return Results.Ok(Produto);
-
+    return Results.Ok(produto);
 });
 
-app.MapPut("/produtos/{id}", async (LojaDBContext DbContext, Produto updateProduto) =>
+app.MapPost("/produtos", async (Produto produto, ProductService productService) =>
 {
+    await productService.AddProductAsync(produto);
+    return Results.Created($"/produtos/{produto.id}", produto);
+});
 
-    var Produto = await DbContext.Produtos.FindAsync(updateProduto.id);
-
-    if (Produto == null)
+app.MapPut("/produtos/{id}", async (int id, Produto produto, ProductService productService) =>
+{
+    if (id != produto.id)
     {
-
-        return Results.NotFound("Produto Not Found");
+        return Results.BadRequest("Product ID mismatch.");
     }
+    await productService.UpdateProductAsync(produto);
+    return Results.Ok();
+});
 
-    Produto.Fornecedor = updateProduto.Fornecedor;
-    Produto.Preco = updateProduto.Preco;
-    Produto.Fornecedor = updateProduto.Fornecedor;
-
-    await DbContext.SaveChangesAsync();
-
-    return Results.Ok(Produto);
-
+app.MapDelete("/produtos/{id}", async (int id, ProductService productService) =>
+{
+    await productService.DeleteProductAsync(id);
+    return Results.Ok();
 });
 
 #endregion
 
 #region Cliente
 
-app.MapPost("/CreateCliente", async (LojaDBContext DbContext, Cliente cliente) =>
-{
+// app.MapPost("/CreateCliente", async (ClienteService service, Cliente cliente) =>
+// {
+//     service.AddClienteAsync(cliente);
+//     return Results.Created($"createCliente/{cliente.id}", cliente);
 
-    DbContext.Cliente.Add(cliente);
-    await DbContext.SaveChangesAsync();
+// });
+
+app.MapPost("/CreateCliente", async (ClienteService service, Cliente cliente) =>
+{
+    await service.AddClienteAsync(cliente);
     return Results.Created($"createCliente/{cliente.id}", cliente);
 
 });
 
-app.MapGet("/Clientes", async (LojaDBContext DbContext) =>
+app.MapGet("/Clientes", async (ClienteService service) =>
 {
 
-    var Clientes = await DbContext.Cliente.ToListAsync();
+    var Clientes = await service.GetAllClientesAsync();
 
     return Results.Ok(Clientes);
 
 });
 
-app.MapGet("/cliente/{id}", async (int id, LojaDBContext DbContext) =>
+app.MapGet("/cliente/{id}", async (int id, ClienteService service) =>
 {
 
-    var cliente = await DbContext.Cliente.FindAsync(id);
+    var cliente = await service.GetClienteById(id);
 
     if (cliente == null)
     {
@@ -115,10 +127,10 @@ app.MapGet("/cliente/{id}", async (int id, LojaDBContext DbContext) =>
 
 });
 
-app.MapPut("/cliente/{id}", async (LojaDBContext DbContext, Cliente updateCliente) =>
+app.MapPut("/cliente/{id}", async (ClienteService service, Cliente updateCliente) =>
 {
 
-    var cliente = await DbContext.Cliente.FindAsync(updateCliente.id);
+    var cliente = await service.GetClienteById(updateCliente.id);
 
     if (cliente == null)
     {
@@ -130,7 +142,7 @@ app.MapPut("/cliente/{id}", async (LojaDBContext DbContext, Cliente updateClient
     cliente.Email = updateCliente.Email;
     cliente.CPF = updateCliente.CPF;
 
-    await DbContext.SaveChangesAsync();
+    await service.UpdateClienteAsync(cliente);
 
     return Results.Ok(updateCliente);
 
@@ -142,28 +154,27 @@ app.MapPut("/cliente/{id}", async (LojaDBContext DbContext, Cliente updateClient
 #region Fornecedor
 
 
-app.MapPost("/CreateFornecedor", async (LojaDBContext DbContext, Fornecedor fornecedor) =>
+app.MapPost("/CreateFornecedor", async (FornecedorService service, Fornecedor fornecedor) =>
 {
 
-    DbContext.Fornecedor.Add(fornecedor);
-    await DbContext.SaveChangesAsync();
+    await service.AddFornecedorAsync(fornecedor);
     return Results.Created($"createFornecedor/{fornecedor.id}", fornecedor);
 
 });
 
-app.MapGet("/Fornecedores", async (LojaDBContext DbContext) =>
+app.MapGet("/Fornecedores", async (FornecedorService service) =>
 {
 
-    var fornecedores = await DbContext.Fornecedor.ToListAsync();
+    var fornecedores = await service.GetFornecedorsAsync();
 
     return Results.Ok(fornecedores);
 
 });
 
-app.MapGet("/fornecedor/{id}", async (int id, LojaDBContext DbContext) =>
+app.MapGet("/fornecedor/{id}", async (int id, FornecedorService service) =>
 {
 
-    var fornecedor = await DbContext.Fornecedor.FindAsync(id);
+    var fornecedor = await service.GetFornecedorAsyncById(id);
 
     if (fornecedor == null)
     {
@@ -176,10 +187,10 @@ app.MapGet("/fornecedor/{id}", async (int id, LojaDBContext DbContext) =>
 
 });
 
-app.MapPut("/fornecedor/{id}", async (LojaDBContext DbContext, Fornecedor updateFornecedor) =>
+app.MapPut("/fornecedor/{id}", async (FornecedorService service, Fornecedor updateFornecedor, int id) =>
 {
 
-    var fornecedor = await DbContext.Fornecedor.FindAsync(updateFornecedor.id);
+    var fornecedor = await service.GetFornecedorAsyncById(id);
 
     if (fornecedor == null)
     {
@@ -192,7 +203,7 @@ app.MapPut("/fornecedor/{id}", async (LojaDBContext DbContext, Fornecedor update
     fornecedor.CNPJ = updateFornecedor.CNPJ;
     fornecedor.Endereco = updateFornecedor.Endereco;
 
-    await DbContext.SaveChangesAsync();
+    service.UpdateFornecedorAsync(updateFornecedor);
 
     return Results.Ok(updateFornecedor);
 
@@ -202,3 +213,4 @@ app.MapPut("/fornecedor/{id}", async (LojaDBContext DbContext, Fornecedor update
 #endregion
 
 app.Run();
+
