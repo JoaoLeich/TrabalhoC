@@ -12,4 +12,6 @@ public class Cliente
 
     public String Email { get; set; }
 
+    public String Senha { get; set; }
+
 }

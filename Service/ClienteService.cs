@@ -28,6 +28,19 @@ public class ClienteService
 
     }
 
+    public async Task<Boolean> Login(LoginModel login){
+
+        var person = await _dbContext.Cliente.FirstOrDefaultAsync(x => x.CPF.Equals(login.CPF));
+
+        if(person.Senha.Equals(login.senha)){
+
+            return true;
+
+        }
+
+        return false;
+    }
+
     // Método para gravar um novo produto
     public async Task AddClienteAsync(Cliente cliente)
     {
