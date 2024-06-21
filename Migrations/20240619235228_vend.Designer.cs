@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CProjeto.Migrations
 {
     [DbContext(typeof(LojaDBContext))]
-    partial class LojaDBContextModelSnapshot : ModelSnapshot
+    [Migration("20240619235228_vend")]
+    partial class vend
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -114,9 +117,6 @@ namespace CProjeto.Migrations
                     b.Property<DateTime>("DataCompra")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("clienteid")
-                        .HasColumnType("int");
-
                     b.Property<string>("numeroNotaFiscal")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -132,8 +132,6 @@ namespace CProjeto.Migrations
 
                     b.HasKey("ID");
 
-                    b.HasIndex("clienteid");
-
                     b.HasIndex("produtoid");
 
                     b.ToTable("Venda");
@@ -141,19 +139,11 @@ namespace CProjeto.Migrations
 
             modelBuilder.Entity("Venda", b =>
                 {
-                    b.HasOne("Cliente", "cliente")
-                        .WithMany()
-                        .HasForeignKey("clienteid")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Produto", "produto")
                         .WithMany()
                         .HasForeignKey("produtoid")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("cliente");
 
                     b.Navigation("produto");
                 });

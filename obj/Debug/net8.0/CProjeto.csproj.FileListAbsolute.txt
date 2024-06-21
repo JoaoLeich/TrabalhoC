@@ -103,3 +103,11 @@ C:\Users\user\Desktop\CProjeto\obj\Debug\net8.0\refint\CProjeto.dll
 C:\Users\user\Desktop\CProjeto\obj\Debug\net8.0\CProjeto.pdb
 C:\Users\user\Desktop\CProjeto\obj\Debug\net8.0\CProjeto.genruntimeconfig.cache
 C:\Users\user\Desktop\CProjeto\obj\Debug\net8.0\ref\CProjeto.dll
+C:\Users\user\Desktop\CProjeto\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\user\Desktop\CProjeto\bin\Debug\net8.0\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\user\Desktop\CProjeto\bin\Debug\net8.0\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\user\Desktop\CProjeto\bin\Debug\net8.0\Microsoft.IdentityModel.Logging.dll
+C:\Users\user\Desktop\CProjeto\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.dll
+C:\Users\user\Desktop\CProjeto\bin\Debug\net8.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\user\Desktop\CProjeto\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
+C:\Users\user\Desktop\CProjeto\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll

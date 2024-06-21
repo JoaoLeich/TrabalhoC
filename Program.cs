@@ -15,6 +15,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<ProductService, ProductService>();
 builder.Services.AddScoped<FornecedorService, FornecedorService>();
 builder.Services.AddScoped<ClienteService, ClienteService>();
+builder.Services.AddScoped<VendaService, VendaService>();
+
 var con = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<LojaDBContext>(op => op.UseMySql(con, new MySqlServerVersion(new Version(8, 3, 0))));
@@ -46,30 +48,74 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 #region Produto
-app.MapGet("/produtos", async (ProductService productService) =>
+
+app.MapGet("/produtos", async (HttpContext context, ProductService productService) =>
 {
+
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
+
     var produtos = await productService.GetAllProductsAsync();
     return Results.Ok(produtos);
+
 });
 
-app.MapGet("/produtos/{id}", async (int id, ProductService productService) =>
+
+app.MapGet("/produtos/{id}", async (HttpContext context, int id, ProductService productService) =>
 {
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
+
     var produto = await productService.GetProductByIdAsync(id);
     if (produto == null)
     {
         return Results.NotFound($"Product with ID {id} not found.");
     }
     return Results.Ok(produto);
+
+
+
 });
 
-app.MapPost("/produtos", async (Produto produto, ProductService productService) =>
+app.MapPost("/produtos", async (HttpContext context, Produto produto, ProductService productService) =>
 {
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
+
     await productService.AddProductAsync(produto);
     return Results.Created($"/produtos/{produto.id}", produto);
+
 });
 
-app.MapPut("/produtos/{id}", async (int id, Produto produto, ProductService productService) =>
+app.MapPut("/produtos/{id}", async (HttpContext context, int id, Produto produto, ProductService productService) =>
 {
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
+
     if (id != produto.id)
     {
         return Results.BadRequest("Product ID mismatch.");
@@ -78,8 +124,17 @@ app.MapPut("/produtos/{id}", async (int id, Produto produto, ProductService prod
     return Results.Ok();
 });
 
-app.MapDelete("/produtos/{id}", async (int id, ProductService productService) =>
+app.MapDelete("/produtos/{id}", async (HttpContext context, int id, ProductService productService) =>
 {
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
+
     await productService.DeleteProductAsync(id);
     return Results.Ok();
 });
@@ -88,31 +143,73 @@ app.MapDelete("/produtos/{id}", async (int id, ProductService productService) =>
 
 #region Cliente
 
-// app.MapPost("/CreateCliente", async (ClienteService service, Cliente cliente) =>
-// {
-//     service.AddClienteAsync(cliente);
-//     return Results.Created($"createCliente/{cliente.id}", cliente);
-
-// });
-
-app.MapPost("/CreateCliente", async (ClienteService service, Cliente cliente) =>
+app.MapPost("/loginCliente", async (ClienteService service, LoginModel loginUser) =>
 {
-    await service.AddClienteAsync(cliente);
-    return Results.Created($"createCliente/{cliente.id}", cliente);
+
+    var isLogin = await service.Login(loginUser);
+
+    if (isLogin)
+    {
+
+        var token = Token.GenerateToken();
+
+        return Results.Accepted("token: " + token);
+    }
+
+    return Results.Unauthorized();
 
 });
 
-app.MapGet("/Clientes", async (ClienteService service) =>
+
+app.MapPost("/CreateCliente", async (HttpContext context, ClienteService service, Cliente cliente) =>
 {
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
+
+    await service.AddClienteAsync(cliente);
+    return Results.Created($"createCliente/{cliente.id}", cliente);
+
+
+
+});
+
+app.MapGet("/Clientes", async (HttpContext context, ClienteService service) =>
+{
+
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
 
     var Clientes = await service.GetAllClientesAsync();
 
     return Results.Ok(Clientes);
 
+
+
 });
 
-app.MapGet("/cliente/{id}", async (int id, ClienteService service) =>
+app.MapGet("/cliente/{id}", async (HttpContext context, int id, ClienteService service) =>
 {
+
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
 
     var cliente = await service.GetClienteById(id);
 
@@ -125,10 +222,20 @@ app.MapGet("/cliente/{id}", async (int id, ClienteService service) =>
 
     return Results.Ok(cliente);
 
+
 });
 
-app.MapPut("/cliente/{id}", async (ClienteService service, Cliente updateCliente) =>
+app.MapPut("/cliente/{id}", async (HttpContext context, ClienteService service, Cliente updateCliente) =>
 {
+
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
 
     var cliente = await service.GetClienteById(updateCliente.id);
 
@@ -154,16 +261,34 @@ app.MapPut("/cliente/{id}", async (ClienteService service, Cliente updateCliente
 #region Fornecedor
 
 
-app.MapPost("/CreateFornecedor", async (FornecedorService service, Fornecedor fornecedor) =>
+app.MapPost("/CreateFornecedor", async (HttpContext context, FornecedorService service, Fornecedor fornecedor) =>
 {
+
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
 
     await service.AddFornecedorAsync(fornecedor);
     return Results.Created($"createFornecedor/{fornecedor.id}", fornecedor);
 
 });
 
-app.MapGet("/Fornecedores", async (FornecedorService service) =>
+app.MapGet("/Fornecedores", async (HttpContext context, FornecedorService service) =>
 {
+
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
 
     var fornecedores = await service.GetFornecedorsAsync();
 
@@ -171,8 +296,17 @@ app.MapGet("/Fornecedores", async (FornecedorService service) =>
 
 });
 
-app.MapGet("/fornecedor/{id}", async (int id, FornecedorService service) =>
+app.MapGet("/fornecedor/{id}", async (HttpContext context, int id, FornecedorService service) =>
 {
+
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
 
     var fornecedor = await service.GetFornecedorAsyncById(id);
 
@@ -187,8 +321,17 @@ app.MapGet("/fornecedor/{id}", async (int id, FornecedorService service) =>
 
 });
 
-app.MapPut("/fornecedor/{id}", async (FornecedorService service, Fornecedor updateFornecedor, int id) =>
+app.MapPut("/fornecedor/{id}", async (HttpContext context, FornecedorService service, Fornecedor updateFornecedor, int id) =>
 {
+
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
 
     var fornecedor = await service.GetFornecedorAsyncById(id);
 
@@ -208,6 +351,39 @@ app.MapPut("/fornecedor/{id}", async (FornecedorService service, Fornecedor upda
     return Results.Ok(updateFornecedor);
 
 });
+
+
+#endregion
+
+
+#region Vendas
+
+app.MapPost("/RealizarVenda", async(Venda venda, VendaService service) =>
+{
+
+    //token jwt
+
+    var isVendeu = await service.Vender(venda);
+
+});
+
+app.MapGet("/ConsultarVendasByProduto/{id}", async(int id,VendaService service) =>{
+
+    var Vendas = await service.ConsultarVendasProduto(id);
+
+    return Results.Ok(Vendas);
+
+});
+
+app.MapGet("/ConsultarPorProdutosSumarizada/{id}", async (int id,VendaService service) =>
+{
+
+    var ret = await service.ConsultarVendasProdutoSumarizada(id);
+
+    return Results.Ok(ret);
+
+});
+
 
 
 #endregion

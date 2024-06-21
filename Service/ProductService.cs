@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
     public class ProductService
     {
+
+
         private readonly LojaDBContext _dbContext;
         public ProductService(LojaDBContext dbContext)
         {

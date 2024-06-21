@@ -5,7 +5,41 @@ using Microsoft.IdentityModel.Tokens;
 public class Token
 {
 
-    public static String GenerateToken(String data)
+    public static Boolean IsTokenPresenteEValido(HttpContext context){
+
+        var ret = false;
+
+        if (!context.Request.Headers.ContainsKey("Authorization"))
+        {
+          
+            ret =  false;
+            return ret;
+        }
+
+        var token = GetToken(context);
+
+        var tokenReturn = isTokenValid(token);
+
+        if(tokenReturn is not null){
+
+            ret =  true;
+            return ret;
+
+        }
+
+        return ret;
+        
+    }
+
+    public static String GetToken(HttpContext context){
+
+    var tokenResponse = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+        return tokenResponse;
+
+    }
+
+    public static String GenerateToken()
     {
 
         var TokenHandler = new JwtSecurityTokenHandler();
