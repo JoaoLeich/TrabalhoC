@@ -40,7 +40,7 @@ public class VendaService
 
     public async Task<vendaRetorno> ConsultarVendasProdutoSumarizada(int produtoid)
     {
-        
+
         var Vendas = _dbContext.Venda.Where(v => v.produto.id == produtoid).ToList();
 
         string prodName = "";
@@ -48,17 +48,49 @@ public class VendaService
 
         foreach (var item in Vendas)
         {
-            
+
             totalVendas += item.precoUnit * item.quantVendida;
             prodName = item.produto.Nome;
 
         }
 
-        var VendaRet = new vendaRetorno(Vendas.Count,totalVendas,prodName);
+        var VendaRet = new vendaRetorno(Vendas.Count, totalVendas, prodName);
 
         return VendaRet;
 
     }
+
+    public async Task<vendaRetorno> ConsultarVendasClienteSumarizada(int clienteID)
+    {
+
+        var Vendas = _dbContext.Venda.Where(v => v.cliente.id == clienteID).ToList();
+
+        string prodName = "";
+        double totalVendas = 0;
+
+        foreach (var item in Vendas)
+        {
+
+            totalVendas += item.precoUnit * item.quantVendida;
+            prodName = item.produto.Nome;
+
+        }
+
+        var VendaRet = new vendaRetorno(Vendas.Count, totalVendas, prodName);
+
+        return VendaRet;
+
+    }
+
+    public async Task<List<Venda>> ConsultarVendasCliente(int clienteID)
+    {
+
+        var Vendas = _dbContext.Venda.Where(v => v.cliente.id == clienteID).ToList();
+
+        return Vendas;
+
+    }
+
 
 
 
