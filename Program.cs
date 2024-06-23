@@ -384,6 +384,24 @@ app.MapGet("/ConsultarPorProdutosSumarizada/{id}", async (int id,VendaService se
 
 });
 
+app.MapGet("/ConsultarPorCliente/{id}", async (int id, VendaService service) =>
+{
+
+    var ret = await service.ConsultarVendasCliente(id);
+
+    return Results.Ok(ret);
+
+});
+
+app.MapGet("/ConsultarPorClienteSumarizada/{id}", async (int id, VendaService service) =>
+{
+
+    var ret = await service.ConsultarVendasClienteSumarizada(id);
+
+    return Results.Ok(ret);
+
+});
+
 
 
 #endregion
