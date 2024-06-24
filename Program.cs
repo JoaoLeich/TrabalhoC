@@ -143,7 +143,7 @@ app.MapDelete("/produtos/{id}", async (HttpContext context, int id, ProductServi
 
 #region Cliente
 
-app.MapPost("/loginCliente", async (ClienteService service, LoginModel loginUser) =>
+app.MapPost("/LoginCliente", async (ClienteService service, LoginModel loginUser) =>
 {
 
     var isLogin = await service.Login(loginUser);
@@ -358,16 +358,34 @@ app.MapPut("/fornecedor/{id}", async (HttpContext context, FornecedorService ser
 
 #region Vendas
 
-app.MapPost("/RealizarVenda", async(Venda venda, VendaService service) =>
+app.MapPost("/RealizarVenda", async (HttpContext context, Venda venda, VendaService service) =>
 {
+    var isToken = Token.IsTokenPresenteEValido(context);
 
-    //token jwt
+    if (!isToken)
+    {
 
-    var isVendeu = await service.Vender(venda);
+        return Results.Unauthorized();
+
+    }
+
+    var isVendeu = service.Vender(venda);
+
+    return Results.Ok(isVendeu);
 
 });
 
-app.MapGet("/ConsultarVendasByProduto/{id}", async(int id,VendaService service) =>{
+app.MapGet("/ConsultarVendasByProduto/{id}", async (HttpContext context, int id, VendaService service) =>
+{
+
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
 
     var Vendas = await service.ConsultarVendasProduto(id);
 
@@ -375,8 +393,17 @@ app.MapGet("/ConsultarVendasByProduto/{id}", async(int id,VendaService service) 
 
 });
 
-app.MapGet("/ConsultarPorProdutosSumarizada/{id}", async (int id,VendaService service) =>
+app.MapGet("/ConsultarPorProdutosSumarizada/{id}", async (HttpContext context, int id, VendaService service) =>
 {
+
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
 
     var ret = await service.ConsultarVendasProdutoSumarizada(id);
 
@@ -384,8 +411,17 @@ app.MapGet("/ConsultarPorProdutosSumarizada/{id}", async (int id,VendaService se
 
 });
 
-app.MapGet("/ConsultarPorCliente/{id}", async (int id, VendaService service) =>
+app.MapGet("/ConsultarPorCliente/{id}", async (HttpContext context, int id, VendaService service) =>
 {
+
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
 
     var ret = await service.ConsultarVendasCliente(id);
 
@@ -393,8 +429,17 @@ app.MapGet("/ConsultarPorCliente/{id}", async (int id, VendaService service) =>
 
 });
 
-app.MapGet("/ConsultarPorClienteSumarizada/{id}", async (int id, VendaService service) =>
+app.MapGet("/ConsultarPorClienteSumarizada/{id}", async (HttpContext context, int id, VendaService service) =>
 {
+
+    var isToken = Token.IsTokenPresenteEValido(context);
+
+    if (!isToken)
+    {
+
+        return Results.Unauthorized();
+
+    }
 
     var ret = await service.ConsultarVendasClienteSumarizada(id);
 

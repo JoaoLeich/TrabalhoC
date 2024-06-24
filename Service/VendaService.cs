@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 public class VendaService
 {
 
@@ -13,26 +15,37 @@ public class VendaService
     public async Task<Boolean> Vender(Venda venda)
     {
 
-        var isCLienteExists = clienteService.GetClienteById(venda.cliente.id);
+        var isCLienteExists = _dbContext.Cliente.Find(venda.cliente.id);
 
-        var isProdutoExists = await prodService.GetProductByIdAsync(venda.produto.id);
+        var isProdutoExists = _dbContext.Produtos.Find(venda.produto.id);
 
         if (isCLienteExists == null || isProdutoExists == null)
         {
 
-            //nao existe         
+
             return false;
 
         }
 
-        await _dbContext.Venda.AddAsync(venda);
+        venda.cliente = isCLienteExists;
+        venda.produto = isProdutoExists;
+
+        venda.DataCompra = DateTime.UtcNow;
+        venda.precoUnit = venda.produto.Preco;
+
+        _dbContext.Venda.Add(venda);
+        _dbContext.SaveChanges();
         return true;
     }
 
     public async Task<List<Venda>> ConsultarVendasProduto(int produtoid)
     {
 
-        var Vendas = _dbContext.Venda.Where(v => v.produto.id == produtoid).ToList();
+        var Vendas = _dbContext.Venda.
+            Include(e => e.cliente)
+            .Include(e => e.produto)
+            .Where(e => e.produto.id == produtoid)
+            .ToList();
 
         return Vendas;
 
@@ -41,7 +54,11 @@ public class VendaService
     public async Task<vendaRetorno> ConsultarVendasProdutoSumarizada(int produtoid)
     {
 
-        var Vendas = _dbContext.Venda.Where(v => v.produto.id == produtoid).ToList();
+        var Vendas = _dbContext.Venda.
+            Include(e => e.cliente)
+            .Include(e => e.produto)
+            .Where(e => e.produto.id == produtoid)
+            .ToList();
 
         string prodName = "";
         double totalVendas = 0;
@@ -63,7 +80,11 @@ public class VendaService
     public async Task<vendaRetorno> ConsultarVendasClienteSumarizada(int clienteID)
     {
 
-        var Vendas = _dbContext.Venda.Where(v => v.cliente.id == clienteID).ToList();
+        var Vendas = _dbContext.Venda.
+            Include(e => e.cliente)
+            .Include(e => e.produto)
+            .Where(e => e.cliente.id == clienteID)
+            .ToList();
 
         string prodName = "";
         double totalVendas = 0;
@@ -85,7 +106,11 @@ public class VendaService
     public async Task<List<Venda>> ConsultarVendasCliente(int clienteID)
     {
 
-        var Vendas = _dbContext.Venda.Where(v => v.cliente.id == clienteID).ToList();
+        var Vendas = _dbContext.Venda.
+            Include(e => e.cliente)
+            .Include(e => e.produto)
+            .Where(e => e.cliente.id == clienteID)
+            .ToList();
 
         return Vendas;
 
